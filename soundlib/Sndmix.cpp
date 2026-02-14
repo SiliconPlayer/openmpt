@@ -1971,11 +1971,11 @@ void CSoundFile::ProcessRamping(ModChannel &chn) const
 		rampLength = globalRampLength = (rampUp ? m_MixerSettings.GetVolumeRampUpSamples() : m_MixerSettings.GetVolumeRampDownSamples());
 		//XXXih: add real support for bidi ramping here
 
-		if(m_playBehaviour[kFT2VolumeRamping] && (GetType() & MOD_TYPE_XM))
-		{
-			// apply FT2-style super-soft volume ramping (5ms), overriding openmpt settings
-			rampLength = globalRampLength = Util::muldivr(5, m_MixerSettings.gdwMixingFreq, 1000);
-		}
+		// if(m_playBehaviour[kFT2VolumeRamping] && (GetType() & MOD_TYPE_XM))
+		// {
+		// 	// apply FT2-style super-soft volume ramping (5ms), overriding openmpt settings
+		// 	rampLength = globalRampLength = Util::muldivr(5, m_MixerSettings.gdwMixingFreq, 1000);
+		// }
 
 		if(chn.pModInstrument != nullptr && rampUp)
 		{
