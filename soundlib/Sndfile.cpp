@@ -1465,7 +1465,7 @@ const char *CSoundFile::GetInstrumentName(INSTRUMENTINDEX nInstr) const
 
 void CSoundFile::InitAmigaResampler()
 {
-	if(m_SongFlags[SONG_ISAMIGA] && m_Resampler.m_Settings.emulateAmiga != Resampling::AmigaFilter::Off)
+	if(m_Resampler.m_Settings.emulateAmiga != Resampling::AmigaFilter::Off)
 	{
 		const Paula::State defaultState(GetSampleRate());
 		for(auto &chn : m_PlayState.Chn)

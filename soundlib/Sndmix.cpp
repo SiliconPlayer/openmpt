@@ -2556,7 +2556,7 @@ bool CSoundFile::ReadNote()
 			} else if(Resampling::IsKnownMode(m_nResampling))
 			{
 				chn.resamplingMode = m_nResampling;
-			} else if(m_SongFlags[SONG_ISAMIGA] && m_Resampler.m_Settings.emulateAmiga != Resampling::AmigaFilter::Off)
+			} else if(m_Resampler.m_Settings.emulateAmiga != Resampling::AmigaFilter::Off)
 			{
 				// Enforce Amiga resampler for Amiga modules
 				chn.resamplingMode = SRCMODE_AMIGA;
