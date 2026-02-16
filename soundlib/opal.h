@@ -178,14 +178,18 @@ class Opal {
         void                SetSampleRate(int sample_rate);
         void                Port(uint16_t reg_num, uint8_t val);
         void                Sample(int16_t *left, int16_t *right);
+        void                SampleWithChannels(int16_t *left, int16_t *right, int16_t *channelLeft, int16_t *channelRight);
 
     protected:
         void                Init(int sample_rate);
         void                Output(int16_t &left, int16_t &right);
+        void                OutputWithChannels(int16_t &left, int16_t &right, int16_t *channelLeft, int16_t *channelRight);
 
         int32_t             SampleRate;
         int32_t             SampleAccum;
         int16_t             LastOutput[2], CurrOutput[2];
+        int16_t             LastChannelOutputL[NumChannels], LastChannelOutputR[NumChannels];
+        int16_t             CurrChannelOutputL[NumChannels], CurrChannelOutputR[NumChannels];
         Channel             Chan[NumChannels];
         Operator            Op[NumOperators];
 //      uint16_t            ExpTable[256];
@@ -372,6 +376,12 @@ void Opal::SetSampleRate(int sample_rate) {
     SampleAccum = 0;
     LastOutput[0] = LastOutput[1] = 0;
     CurrOutput[0] = CurrOutput[1] = 0;
+    for(int i = 0; i < NumChannels; i++) {
+        LastChannelOutputL[i] = 0;
+        LastChannelOutputR[i] = 0;
+        CurrChannelOutputL[i] = 0;
+        CurrChannelOutputR[i] = 0;
+    }
 }
 
 
@@ -582,6 +592,36 @@ void Opal::Sample(int16_t *left, int16_t *right) {
     SampleAccum += OPL3SampleRate;
 }
 
+//--------------------------------------------------------------------------------------------------
+void Opal::SampleWithChannels(int16_t *left, int16_t *right, int16_t *channelLeft, int16_t *channelRight) {
+
+    // If the destination sample rate is higher than the OPL3 sample rate, we need to skip ahead
+    while (SampleAccum >= SampleRate) {
+
+        LastOutput[0] = CurrOutput[0];
+        LastOutput[1] = CurrOutput[1];
+        for(int i = 0; i < NumChannels; i++) {
+            LastChannelOutputL[i] = CurrChannelOutputL[i];
+            LastChannelOutputR[i] = CurrChannelOutputR[i];
+        }
+
+        OutputWithChannels(CurrOutput[0], CurrOutput[1], CurrChannelOutputL, CurrChannelOutputR);
+
+        SampleAccum -= SampleRate;
+    }
+
+    // Mix with the partial accumulation
+    const int32_t fract = Util::muldivr(SampleAccum, 65536, SampleRate);
+    *left = static_cast<int16_t>(LastOutput[0] + ((fract * (CurrOutput[0] - LastOutput[0])) / 65536));
+    *right = static_cast<int16_t>(LastOutput[1] + ((fract * (CurrOutput[1] - LastOutput[1])) / 65536));
+    for(int i = 0; i < NumChannels; i++) {
+        channelLeft[i] = static_cast<int16_t>(LastChannelOutputL[i] + ((fract * (CurrChannelOutputL[i] - LastChannelOutputL[i])) / 65536));
+        channelRight[i] = static_cast<int16_t>(LastChannelOutputR[i] + ((fract * (CurrChannelOutputR[i] - LastChannelOutputR[i])) / 65536));
+    }
+
+    SampleAccum += OPL3SampleRate;
+}
+
 
 
 //==================================================================================================
@@ -596,6 +636,58 @@ void Opal::Output(int16_t &left, int16_t &right) {
 
         int16_t chanleft, chanright;
         Chan[i].Output(chanleft, chanright);
+
+        leftmix += chanleft;
+        rightmix += chanright;
+    }
+
+    // Clamp
+    if (leftmix < -0x8000)
+        left = -0x8000;
+    else if (leftmix > 0x7FFF)
+        left = 0x7FFF;
+    else
+        left = static_cast<int16_t>(leftmix);
+
+    if (rightmix < -0x8000)
+        right = -0x8000;
+    else if (rightmix > 0x7FFF)
+        right = 0x7FFF;
+    else
+        right = static_cast<int16_t>(rightmix);
+
+    Clock++;
+
+    // Tremolo.  According to this post, the OPL3 tremolo is a 13,440 sample length triangle wave
+    // with a peak at 26 and a trough at 0 and is simply added to the logarithmic level accumulator
+    //      http://forums.submarine.org.uk/phpBB/viewtopic.php?f=9&t=1171
+    TremoloClock = (TremoloClock + 1) % 13440;
+    TremoloLevel = ((TremoloClock < 13440 / 2) ? TremoloClock : 13440 - TremoloClock) / 256;
+    if (!TremoloDepth)
+        TremoloLevel >>= 2;
+
+    // Vibrato.  This appears to be a 8 sample long triangle wave with a magnitude of the three
+    // high bits of the channel frequency, positive and negative, divided by two if the vibrato
+    // depth is zero.  It is only cycled every 1,024 samples.
+    VibratoTick++;
+    if (VibratoTick >= 1024) {
+        VibratoTick = 0;
+        VibratoClock = (VibratoClock + 1) & 7;
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+void Opal::OutputWithChannels(int16_t &left, int16_t &right, int16_t *channelLeft, int16_t *channelRight) {
+
+    int32_t leftmix = 0, rightmix = 0;
+
+    // Sum the output of each channel
+    for (int i = 0; i < NumChannels; i++) {
+
+        int16_t chanleft, chanright;
+        Chan[i].Output(chanleft, chanright);
+        channelLeft[i] = chanleft;
+        channelRight[i] = chanright;
 
         leftmix += chanleft;
         rightmix += chanright;

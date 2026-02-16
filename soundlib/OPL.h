@@ -80,12 +80,14 @@ public:
 		virtual ~IRegisterLogger() {}
 	};
 
+	using ScopeTapCallback = void (*)(void *user, CHANNELINDEX channel, int32 left, int32 right);
+
 	explicit OPL(uint32 sampleRate);
 	explicit OPL(IRegisterLogger &logger);
 	~OPL();
 
 	void Initialize(uint32 sampleRate);
-	void Mix(int32 *buffer, size_t count, uint32 volumeFactorQ16);
+	void Mix(int32 *buffer, size_t count, uint32 volumeFactorQ16, ScopeTapCallback scopeTap = nullptr, void *scopeTapUser = nullptr);
 
 	void NoteOff(CHANNELINDEX c);
 	void NoteCut(CHANNELINDEX c, bool unassign = true);

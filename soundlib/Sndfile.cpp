@@ -942,34 +942,48 @@ void CSoundFile::ResetChannelScopeBuffers()
 	}
 }
 
-void CSoundFile::PushChannelScopeDiff(CHANNELINDEX channel, const mixsample_t *before, const mixsample_t *after, int32 sampleCount)
+void CSoundFile::PushChannelScopeSample(CHANNELINDEX channel, float sample)
 {
-	if(channel >= MAX_CHANNELS || before == nullptr || after == nullptr || sampleCount <= 0)
+	if(channel >= MAX_CHANNELS)
 	{
 		return;
 	}
 	ChannelScopeBuffer &buffer = m_channelScopeBuffers[channel];
+	buffer.data[buffer.writePos] = std::clamp(sample, -1.0f, 1.0f);
+	buffer.writePos++;
+	if(buffer.writePos >= kChannelScopeBufferSize)
+	{
+		buffer.writePos = 0;
+	}
+	if(buffer.available < kChannelScopeBufferSize)
+	{
+		buffer.available++;
+	}
+}
+
+void CSoundFile::PushChannelScopeStereoSample(CHANNELINDEX channel, float left, float right)
+{
 #ifdef MPT_INTMIXER
 	const float intToFloat = m_PlayConfig.getIntToFloat();
 	const float scale = intToFloat * 0.5f;
 #else
 	const float scale = 0.5f;
 #endif
+	PushChannelScopeSample(channel, (left + right) * scale);
+}
+
+void CSoundFile::PushChannelScopeDiff(CHANNELINDEX channel, const mixsample_t *before, const mixsample_t *after, int32 sampleCount)
+{
+	if(channel >= MAX_CHANNELS || before == nullptr || after == nullptr || sampleCount <= 0)
+	{
+		return;
+	}
 	for(int32 i = 0; i < sampleCount; ++i)
 	{
 		const int32 interleavedIndex = i * 2;
-		const float left = static_cast<float>(after[interleavedIndex + 0] - before[interleavedIndex + 0]);
-		const float right = static_cast<float>(after[interleavedIndex + 1] - before[interleavedIndex + 1]);
-		buffer.data[buffer.writePos] = std::clamp((left + right) * scale, -1.0f, 1.0f);
-		buffer.writePos++;
-		if(buffer.writePos >= kChannelScopeBufferSize)
-		{
-			buffer.writePos = 0;
-		}
-		if(buffer.available < kChannelScopeBufferSize)
-		{
-			buffer.available++;
-		}
+		const float left = static_cast<float>(after[interleavedIndex + 0]) - static_cast<float>(before[interleavedIndex + 0]);
+		const float right = static_cast<float>(after[interleavedIndex + 1]) - static_cast<float>(before[interleavedIndex + 1]);
+		PushChannelScopeStereoSample(channel, left, right);
 	}
 }
 

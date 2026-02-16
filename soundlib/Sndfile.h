@@ -1005,6 +1005,8 @@ private:
 	void ProcessDSP(uint32 countChunk);
 	void ProcessPlugins(uint32 nCount);
 	void ProcessInputChannels(IAudioSource &source, std::size_t countChunk);
+	void PushChannelScopeSample(CHANNELINDEX channel, float sample);
+	void PushChannelScopeStereoSample(CHANNELINDEX channel, float left, float right);
 	void PushChannelScopeDiff(CHANNELINDEX channel, const mixsample_t *before, const mixsample_t *after, int32 sampleCount);
 public:
 	samplecount_t GetTotalSampleCount() const { return m_PlayState.m_lTotalSampleCount; }

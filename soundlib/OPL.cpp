@@ -53,19 +53,41 @@ void OPL::Initialize(uint32 sampleRate)
 }
 
 
-void OPL::Mix(int32 *target, size_t count, uint32 volumeFactorQ16)
+void OPL::Mix(int32 *target, size_t count, uint32 volumeFactorQ16, ScopeTapCallback scopeTap, void *scopeTapUser)
 {
 	if(!m_isActive)
 		return;
 
 	// This factor causes a sample voice to be more or less as loud as an OPL voice
 	const int32 factor = Util::muldiv_unsigned(volumeFactorQ16, 6169, (1 << 16));
+	std::array<int16, OPL_CHANNELS> channelLeft{};
+	std::array<int16, OPL_CHANNELS> channelRight{};
 	while(count--)
 	{
 		int16 l, r;
-		m_opl->Sample(&l, &r);
-		target[0] += l * factor;
-		target[1] += r * factor;
+		m_opl->SampleWithChannels(&l, &r, channelLeft.data(), channelRight.data());
+		const int32 mixedLeft = static_cast<int32>(l) * factor;
+		const int32 mixedRight = static_cast<int32>(r) * factor;
+		target[0] += mixedLeft;
+		target[1] += mixedRight;
+		if(scopeTap != nullptr)
+		{
+			for(uint8 oplCh = 0; oplCh < OPL_CHANNELS; oplCh++)
+			{
+				const CHANNELINDEX trackerChannel = m_OPLtoChan[oplCh];
+				if(trackerChannel == CHANNELINDEX_INVALID)
+				{
+					continue;
+				}
+				const int32 channelMixLeft = static_cast<int32>(channelLeft[oplCh]) * factor;
+				const int32 channelMixRight = static_cast<int32>(channelRight[oplCh]) * factor;
+				if(channelMixLeft == 0 && channelMixRight == 0)
+				{
+					continue;
+				}
+				scopeTap(scopeTapUser, trackerChannel, channelMixLeft, channelMixRight);
+			}
+		}
 		target += 2;
 	}
 }

@@ -306,7 +306,16 @@ samplecount_t CSoundFile::Read(samplecount_t count, IAudioTarget &target, IAudio
 
 		if(m_opl)
 		{
-			m_opl->Mix(MixSoundBuffer, countChunk, m_OPLVolumeFactor * m_nVSTiVolume / 48);
+			m_opl->Mix(
+				MixSoundBuffer,
+				countChunk,
+				m_OPLVolumeFactor * m_nVSTiVolume / 48,
+				[](void *user, CHANNELINDEX channel, int32 left, int32 right)
+				{
+					auto *sndFile = static_cast<CSoundFile *>(user);
+					sndFile->PushChannelScopeStereoSample(channel, static_cast<float>(left), static_cast<float>(right));
+				},
+				this);
 		}
 
 #ifndef NO_REVERB
