@@ -1008,6 +1008,7 @@ private:
 	void PushChannelScopeSample(CHANNELINDEX channel, float sample);
 	void PushChannelScopeStereoSample(CHANNELINDEX channel, float left, float right);
 	void PushChannelScopeDiff(CHANNELINDEX channel, const mixsample_t *before, const mixsample_t *after, int32 sampleCount);
+	void PushChannelScopeSilence(CHANNELINDEX channel, int32 sampleCount);
 public:
 	samplecount_t GetTotalSampleCount() const { return m_PlayState.m_lTotalSampleCount; }
 	bool HasPositionChanged() { bool b = m_PlayState.m_flags[SONG_POSITIONCHANGED]; m_PlayState.m_flags.reset(SONG_POSITIONCHANGED); return b; }

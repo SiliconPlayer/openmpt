@@ -987,6 +987,18 @@ void CSoundFile::PushChannelScopeDiff(CHANNELINDEX channel, const mixsample_t *b
 	}
 }
 
+void CSoundFile::PushChannelScopeSilence(CHANNELINDEX channel, int32 sampleCount)
+{
+	if(channel >= MAX_CHANNELS || sampleCount <= 0)
+	{
+		return;
+	}
+	for(int32 i = 0; i < sampleCount; ++i)
+	{
+		PushChannelScopeSample(channel, 0.0f);
+	}
+}
+
 
 void CSoundFile::ResetPlayPos()
 {

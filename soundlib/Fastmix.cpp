@@ -311,11 +311,34 @@ void CSoundFile::CreateStereoMix(int count)
 
 	// Channels that are actually mixed and not skipped (because they are paused or muted)
 	CHANNELINDEX numChannelsMixed = 0;
+	std::array<bool, MAX_CHANNELS> scopeUpdated{};
 
 	for(uint32 nChn = 0; nChn < m_nMixChannels; nChn++)
 	{
-		if(MixChannel(count, m_PlayState.Chn[m_PlayState.ChnMix[nChn]], m_PlayState.ChnMix[nChn], numChannelsMixed < m_MixerSettings.m_nMaxMixChannels))
+		const CHANNELINDEX channelIndex = m_PlayState.ChnMix[nChn];
+		const bool mixed = MixChannel(
+			count,
+			m_PlayState.Chn[channelIndex],
+			channelIndex,
+			numChannelsMixed < m_MixerSettings.m_nMaxMixChannels
+		);
+		if(mixed)
+		{
 			numChannelsMixed++;
+			if(channelIndex < MAX_CHANNELS)
+			{
+				scopeUpdated[channelIndex] = true;
+			}
+		}
+	}
+
+	const CHANNELINDEX scopeChannels = std::min(GetNumChannels(), static_cast<CHANNELINDEX>(MAX_CHANNELS));
+	for(CHANNELINDEX channel = 0; channel < scopeChannels; channel++)
+	{
+		if(!scopeUpdated[channel])
+		{
+			PushChannelScopeSilence(channel, count);
+		}
 	}
 	m_nMixStat = std::max(m_nMixStat, numChannelsMixed);
 }
