@@ -949,6 +949,16 @@ public:
 	  \remarks The returned value is solely based on the note velocity and does not take the actual waveform of the playing sample into account.
 	*/
 	LIBOPENMPT_CXX_API_MEMBER float get_current_channel_vu_rear_right( std::int32_t channel ) const;
+	//! Get a per-channel waveform scope slice from recent mixer output.
+	/*!
+	  \param channel The channel whose scope waveform should be retrieved.
+	  \param scope Destination buffer to write waveform samples into.
+	  \param count Number of samples requested in scope.
+	  \return Number of samples written (same as count on success, 0 on invalid arguments).
+	  \remarks Samples are normalized floating point in range [-1.0, +1.0].
+	  \since 0.8.0
+	*/
+	LIBOPENMPT_CXX_API_MEMBER std::int32_t get_current_channel_scope( std::int32_t channel, float * scope, std::int32_t count ) const;
 
 	//! Get the number of sub-songs
 	/*!

@@ -1407,6 +1407,13 @@ float module_impl::get_current_channel_vu_rear_right( std::int32_t channel ) con
 	}
 	return m_sndFile->m_PlayState.Chn[channel].dwFlags[OpenMPT::CHN_SURROUND] ? m_sndFile->m_PlayState.Chn[channel].nRightVU * (1.0f/128.0f) : 0.0f;
 }
+std::int32_t module_impl::get_current_channel_scope( std::int32_t channel, float * scope, std::int32_t count ) const {
+	if(scope == nullptr || count <= 0 || channel < 0 || channel >= m_sndFile->GetNumChannels())
+	{
+		return 0;
+	}
+	return m_sndFile->GetChannelScopeSamples(static_cast<OpenMPT::CHANNELINDEX>(channel), scope, count);
+}
 
 std::int32_t module_impl::get_num_subsongs() const {
 	std::unique_ptr<subsongs_type> subsongs_temp = has_subsongs_inited() ? std::unique_ptr<subsongs_type>() : std::make_unique<subsongs_type>( get_subsongs() );

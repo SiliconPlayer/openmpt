@@ -467,11 +467,22 @@ bool CSoundFile::MixChannel(int count, ModChannel &chn, CHANNELINDEX channel, bo
 				mixsample_t *pbufmax = pbuffer + (nSmpCount * 2);
 				chn.nROfs = -*(pbufmax - 2);
 				chn.nLOfs = -*(pbufmax - 1);
+				const bool captureScope = (channel != CHANNELINDEX_INVALID && channel < GetNumChannels());
+				std::array<mixsample_t, MIXBUFFERSIZE * 2> scopeBefore;
+				mixsample_t *scopeAfter = pbuffer;
+				if(captureScope)
+				{
+					std::memcpy(scopeBefore.data(), pbuffer, static_cast<std::size_t>(nSmpCount * 2) * sizeof(mixsample_t));
+				}
 
 #ifdef MPT_BUILD_DEBUG
 				SamplePosition targetpos = chn.position + chn.increment * nSmpCount;
 #endif
 				MixFuncTable::Functions[functionNdx | (chn.nRampLength ? MixFuncTable::ndxRamp : 0)](chn, m_Resampler, pbuffer, nSmpCount);
+				if(captureScope)
+				{
+					PushChannelScopeDiff(channel, scopeBefore.data(), scopeAfter, nSmpCount);
+				}
 #ifdef MPT_BUILD_DEBUG
 				MPT_ASSERT(chn.position.GetUInt() == targetpos.GetUInt());
 #endif

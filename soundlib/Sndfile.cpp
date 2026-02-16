@@ -905,9 +905,78 @@ double CSoundFile::GetCurrentBPM() const
 	return bpm;
 }
 
+int32 CSoundFile::GetChannelScopeSamples(CHANNELINDEX channel, float *output, int32 sampleCount) const
+{
+	if(output == nullptr || sampleCount <= 0 || channel >= MAX_CHANNELS)
+	{
+		return 0;
+	}
+	const ChannelScopeBuffer &buffer = m_channelScopeBuffers[channel];
+	const uint32 requestCount = static_cast<uint32>(sampleCount);
+	const uint32 copyCount = std::min(requestCount, std::min<uint32>(buffer.available, static_cast<uint32>(kChannelScopeBufferSize)));
+	const uint32 padCount = requestCount - copyCount;
+	for(uint32 i = 0; i < padCount; ++i)
+	{
+		output[i] = 0.0f;
+	}
+	uint32 readPos = (buffer.writePos + static_cast<uint32>(kChannelScopeBufferSize) - copyCount) % static_cast<uint32>(kChannelScopeBufferSize);
+	for(uint32 i = 0; i < copyCount; ++i)
+	{
+		output[padCount + i] = buffer.data[readPos];
+		readPos++;
+		if(readPos >= kChannelScopeBufferSize)
+		{
+			readPos = 0;
+		}
+	}
+	return sampleCount;
+}
+
+void CSoundFile::ResetChannelScopeBuffers()
+{
+	for(auto &buffer : m_channelScopeBuffers)
+	{
+		buffer.data.fill(0.0f);
+		buffer.writePos = 0;
+		buffer.available = 0;
+	}
+}
+
+void CSoundFile::PushChannelScopeDiff(CHANNELINDEX channel, const mixsample_t *before, const mixsample_t *after, int32 sampleCount)
+{
+	if(channel >= MAX_CHANNELS || before == nullptr || after == nullptr || sampleCount <= 0)
+	{
+		return;
+	}
+	ChannelScopeBuffer &buffer = m_channelScopeBuffers[channel];
+#ifdef MPT_INTMIXER
+	const float intToFloat = m_PlayConfig.getIntToFloat();
+	const float scale = intToFloat * 0.5f;
+#else
+	const float scale = 0.5f;
+#endif
+	for(int32 i = 0; i < sampleCount; ++i)
+	{
+		const int32 interleavedIndex = i * 2;
+		const float left = static_cast<float>(after[interleavedIndex + 0] - before[interleavedIndex + 0]);
+		const float right = static_cast<float>(after[interleavedIndex + 1] - before[interleavedIndex + 1]);
+		buffer.data[buffer.writePos] = std::clamp((left + right) * scale, -1.0f, 1.0f);
+		buffer.writePos++;
+		if(buffer.writePos >= kChannelScopeBufferSize)
+		{
+			buffer.writePos = 0;
+		}
+		if(buffer.available < kChannelScopeBufferSize)
+		{
+			buffer.available++;
+		}
+	}
+}
+
 
 void CSoundFile::ResetPlayPos()
 {
+	ResetChannelScopeBuffers();
 	const auto muteFlag = GetChannelMuteFlag();
 	for(CHANNELINDEX i = 0; i < m_PlayState.Chn.size(); i++)
 		m_PlayState.Chn[i].Reset(ModChannel::resetSetPosFull, *this, i, muteFlag);
@@ -972,6 +1041,7 @@ void CSoundFile::SetCurrentOrder(ORDERINDEX nOrder)
 		ResetPlayPos();
 	} else
 	{
+		ResetChannelScopeBuffers();
 		m_PlayState.m_nNextOrder = nOrder;
 		m_PlayState.m_nRow = m_PlayState.m_nNextRow = 0;
 		m_PlayState.m_nPattern = 0;

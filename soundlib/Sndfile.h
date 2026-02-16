@@ -58,6 +58,7 @@
 #include "../common/FileReaderFwd.h"
 
 #include <vector>
+#include <array>
 #include <bitset>
 #include <set>
 
@@ -444,6 +445,14 @@ private:
 	// End-of-sample pop reduction tail level
 	mixsample_t m_dryLOfsVol = 0, m_dryROfsVol = 0;
 	mixsample_t m_surroundLOfsVol = 0, m_surroundROfsVol = 0;
+	static constexpr std::size_t kChannelScopeBufferSize = 16384;
+	struct ChannelScopeBuffer
+	{
+		std::array<float, kChannelScopeBufferSize> data{};
+		uint32 writePos = 0;
+		uint32 available = 0;
+	};
+	std::array<ChannelScopeBuffer, MAX_CHANNELS> m_channelScopeBuffers{};
 
 public:
 	MixerSettings m_MixerSettings;
@@ -749,6 +758,8 @@ public:
 	void DontLoopPattern(PATTERNINDEX nPat, ROWINDEX nRow = 0);
 	CHANNELINDEX GetMixStat() const { return m_nMixStat; }
 	void ResetMixStat() { m_nMixStat = 0; }
+	int32 GetChannelScopeSamples(CHANNELINDEX channel, float *output, int32 sampleCount) const;
+	void ResetChannelScopeBuffers();
 	void ResetPlayPos();
 	void SetCurrentOrder(ORDERINDEX nOrder);
 	std::string GetTitle() const { return m_songName; }
@@ -994,6 +1005,7 @@ private:
 	void ProcessDSP(uint32 countChunk);
 	void ProcessPlugins(uint32 nCount);
 	void ProcessInputChannels(IAudioSource &source, std::size_t countChunk);
+	void PushChannelScopeDiff(CHANNELINDEX channel, const mixsample_t *before, const mixsample_t *after, int32 sampleCount);
 public:
 	samplecount_t GetTotalSampleCount() const { return m_PlayState.m_lTotalSampleCount; }
 	bool HasPositionChanged() { bool b = m_PlayState.m_flags[SONG_POSITIONCHANGED]; m_PlayState.m_flags.reset(SONG_POSITIONCHANGED); return b; }
