@@ -240,6 +240,7 @@ public:
 	float get_current_channel_vu_rear_left( std::int32_t channel ) const;
 	float get_current_channel_vu_rear_right( std::int32_t channel ) const;
 	std::int32_t get_current_channel_scope( std::int32_t channel, float * scope, std::int32_t count ) const;
+	std::int32_t get_current_channel_text_state( std::int32_t channel, std::int32_t * state, std::int32_t count ) const;
 	std::int32_t get_num_subsongs() const;
 	std::int32_t get_num_channels() const;
 	std::int32_t get_num_orders() const;

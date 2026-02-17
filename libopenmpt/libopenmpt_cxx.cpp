@@ -364,6 +364,9 @@ float module::get_current_channel_vu_rear_right( std::int32_t channel ) const {
 std::int32_t module::get_current_channel_scope( std::int32_t channel, float * scope, std::int32_t count ) const {
 	return impl->get_current_channel_scope( channel, scope, count );
 }
+std::int32_t module::get_current_channel_text_state( std::int32_t channel, std::int32_t * state, std::int32_t count ) const {
+	return impl->get_current_channel_text_state( channel, state, count );
+}
 
 std::int32_t module::get_num_subsongs() const {
 	return impl->get_num_subsongs();

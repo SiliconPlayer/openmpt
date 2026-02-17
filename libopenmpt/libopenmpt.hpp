@@ -959,6 +959,18 @@ public:
 	  \since 0.8.0
 	*/
 	LIBOPENMPT_CXX_API_MEMBER std::int32_t get_current_channel_scope( std::int32_t channel, float * scope, std::int32_t count ) const;
+	//! Get compact live tracker state for a channel.
+	/*!
+	  \param channel The channel whose state should be retrieved.
+	  \param state Destination integer array.
+	  \param count Number of integer slots available in \c state.
+	  \return Number of integer fields written (0 on invalid arguments).
+	  \remarks Field order:
+	  [0]=note, [1]=volume, [2]=effect letter ASCII (0 when none),
+	  [3]=effect parameter, [4]=instrument index, [5]=sample index.
+	  \since 0.8.0
+	*/
+	LIBOPENMPT_CXX_API_MEMBER std::int32_t get_current_channel_text_state( std::int32_t channel, std::int32_t * state, std::int32_t count ) const;
 
 	//! Get the number of sub-songs
 	/*!

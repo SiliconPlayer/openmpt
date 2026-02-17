@@ -1414,6 +1414,75 @@ std::int32_t module_impl::get_current_channel_scope( std::int32_t channel, float
 	}
 	return m_sndFile->GetChannelScopeSamples(static_cast<OpenMPT::CHANNELINDEX>(channel), scope, count);
 }
+std::int32_t module_impl::get_current_channel_text_state( std::int32_t channel, std::int32_t * state, std::int32_t count ) const {
+	if(state == nullptr || count <= 0 || channel < 0 || channel >= m_sndFile->GetNumChannels())
+	{
+		return 0;
+	}
+	const auto &chn = m_sndFile->m_PlayState.Chn[channel];
+	const int fields = std::min<std::int32_t>(count, 6);
+	for(int i = 0; i < fields; ++i)
+	{
+		state[i] = 0;
+	}
+
+	OpenMPT::ModCommand::NOTE note = chn.nNote;
+	if(!OpenMPT::ModCommand::IsNote(note))
+	{
+		note = chn.nLastNote;
+	}
+	state[0] = OpenMPT::ModCommand::IsNote(note) ? static_cast<std::int32_t>(note) : -1;
+	if(fields >= 2)
+	{
+		state[1] = std::max(0, std::min(256, chn.nVolume));
+	}
+	if(fields >= 3)
+	{
+		char effectLetter = 0;
+		if(chn.rowCommand.command != OpenMPT::CMD_NONE)
+		{
+			effectLetter = m_sndFile->GetModSpecifications().GetEffectLetter(chn.rowCommand.command);
+		}
+		state[2] = effectLetter ? static_cast<std::int32_t>(static_cast<unsigned char>(effectLetter)) : 0;
+	}
+	if(fields >= 4)
+	{
+		state[3] = (chn.rowCommand.command != OpenMPT::CMD_NONE) ? static_cast<std::int32_t>(chn.rowCommand.param) : -1;
+	}
+	if(fields >= 5)
+	{
+		std::int32_t instrIndex = -1;
+		if(chn.pModInstrument != nullptr)
+		{
+			for(OpenMPT::INSTRUMENTINDEX i = 1; i <= m_sndFile->GetNumInstruments(); ++i)
+			{
+				if(m_sndFile->Instruments[i] == chn.pModInstrument)
+				{
+					instrIndex = static_cast<std::int32_t>(i);
+					break;
+				}
+			}
+		}
+		state[4] = instrIndex;
+	}
+	if(fields >= 6)
+	{
+		std::int32_t sampleIndex = -1;
+		if(chn.pModSample != nullptr)
+		{
+			for(OpenMPT::SAMPLEINDEX i = 1; i <= m_sndFile->GetNumSamples(); ++i)
+			{
+				if(&m_sndFile->GetSample(i) == chn.pModSample)
+				{
+					sampleIndex = static_cast<std::int32_t>(i);
+					break;
+				}
+			}
+		}
+		state[5] = sampleIndex;
+	}
+	return fields;
+}
 
 std::int32_t module_impl::get_num_subsongs() const {
 	std::unique_ptr<subsongs_type> subsongs_temp = has_subsongs_inited() ? std::unique_ptr<subsongs_type>() : std::make_unique<subsongs_type>( get_subsongs() );
