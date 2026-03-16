@@ -17,6 +17,7 @@
 // - The loop lookahead stuff might still fail for samples with backward loops.
 
 #include "stdafx.h"
+#include "OPL.h"
 #include "Sndfile.h"
 #include "MixerLoops.h"
 #include "MixFuncTable.h"
