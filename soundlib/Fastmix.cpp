@@ -335,7 +335,8 @@ void CSoundFile::CreateStereoMix(int count)
 	const CHANNELINDEX scopeChannels = std::min(GetNumChannels(), static_cast<CHANNELINDEX>(MAX_CHANNELS));
 	for(CHANNELINDEX channel = 0; channel < scopeChannels; channel++)
 	{
-		if(!scopeUpdated[channel])
+		const bool renderedByOpl = (m_opl != nullptr) && m_opl->IsActive(channel);
+		if(!scopeUpdated[channel] && !renderedByOpl)
 		{
 			PushChannelScopeSilence(channel, count);
 		}

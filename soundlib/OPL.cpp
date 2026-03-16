@@ -81,10 +81,6 @@ void OPL::Mix(int32 *target, size_t count, uint32 volumeFactorQ16, ScopeTapCallb
 				}
 				const int32 channelMixLeft = static_cast<int32>(channelLeft[oplCh]) * factor;
 				const int32 channelMixRight = static_cast<int32>(channelRight[oplCh]) * factor;
-				if(channelMixLeft == 0 && channelMixRight == 0)
-				{
-					continue;
-				}
 				scopeTap(scopeTapUser, trackerChannel, channelMixLeft, channelMixRight);
 			}
 		}
