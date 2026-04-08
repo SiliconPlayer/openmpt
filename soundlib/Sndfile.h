@@ -445,7 +445,7 @@ private:
 	// End-of-sample pop reduction tail level
 	mixsample_t m_dryLOfsVol = 0, m_dryROfsVol = 0;
 	mixsample_t m_surroundLOfsVol = 0, m_surroundROfsVol = 0;
-	static constexpr std::size_t kChannelScopeBufferSize = 16384;
+	static constexpr std::size_t kChannelScopeBufferSize = 32768;
 	struct ChannelScopeBuffer
 	{
 		std::array<float, kChannelScopeBufferSize> data{};
