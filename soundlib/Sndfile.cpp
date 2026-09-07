@@ -919,15 +919,13 @@ int32 CSoundFile::GetChannelScopeSamples(CHANNELINDEX channel, float *output, in
 	{
 		output[i] = 0.0f;
 	}
-	uint32 readPos = (buffer.writePos + static_cast<uint32>(kChannelScopeBufferSize) - copyCount) % static_cast<uint32>(kChannelScopeBufferSize);
-	for(uint32 i = 0; i < copyCount; ++i)
+	const uint32 bufferSize = static_cast<uint32>(kChannelScopeBufferSize);
+	uint32 readPos = (buffer.writePos + bufferSize - copyCount) % bufferSize;
+	const uint32 firstRun = std::min(copyCount, bufferSize - readPos);
+	std::memcpy(output + padCount, buffer.data.data() + readPos, firstRun * sizeof(float));
+	if(copyCount > firstRun)
 	{
-		output[padCount + i] = buffer.data[readPos];
-		readPos++;
-		if(readPos >= kChannelScopeBufferSize)
-		{
-			readPos = 0;
-		}
+		std::memcpy(output + padCount + firstRun, buffer.data.data(), (copyCount - firstRun) * sizeof(float));
 	}
 	return sampleCount;
 }
