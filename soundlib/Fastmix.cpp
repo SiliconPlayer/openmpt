@@ -317,6 +317,11 @@ void CSoundFile::CreateStereoMix(int count)
 	for(uint32 nChn = 0; nChn < m_nMixChannels; nChn++)
 	{
 		const CHANNELINDEX channelIndex = m_PlayState.ChnMix[nChn];
+		// MixChannel pushes one scope sample per frame as soon as it enters the
+		// mixing path, silent chunks included; only its early-outs push nothing.
+		const ModChannel &scopeChn = m_PlayState.Chn[channelIndex];
+		const bool scopePushed = !scopeChn.isPaused
+			&& (scopeChn.pCurrentSample || scopeChn.nLOfs || scopeChn.nROfs);
 		const bool mixed = MixChannel(
 			count,
 			m_PlayState.Chn[channelIndex],
@@ -326,10 +331,10 @@ void CSoundFile::CreateStereoMix(int count)
 		if(mixed)
 		{
 			numChannelsMixed++;
-			if(channelIndex < MAX_CHANNELS)
-			{
-				scopeUpdated[channelIndex] = true;
-			}
+		}
+		if((mixed || scopePushed) && channelIndex < MAX_CHANNELS)
+		{
+			scopeUpdated[channelIndex] = true;
 		}
 	}
 
