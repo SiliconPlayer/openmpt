@@ -759,6 +759,10 @@ public:
 	CHANNELINDEX GetMixStat() const { return m_nMixStat; }
 	void ResetMixStat() { m_nMixStat = 0; }
 	int32 GetChannelScopeSamples(CHANNELINDEX channel, float *output, int32 sampleCount) const;
+	/* SiliconPlayer: modular write position for append-based consumers. */
+	int32 GetChannelScopeWritePos(CHANNELINDEX channel) const;
+	/* SiliconPlayer: copy the wrapped scope span [fromPos, toPos) ascending. */
+	int32 GetChannelScopeAppend(CHANNELINDEX channel, float *output, int32 fromPos, int32 toPos) const;
 	void ResetChannelScopeBuffers();
 	void ResetPlayPos();
 	void SetCurrentOrder(ORDERINDEX nOrder);

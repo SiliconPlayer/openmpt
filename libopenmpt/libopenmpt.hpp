@@ -959,6 +959,10 @@ public:
 	  \since 0.8.0
 	*/
 	LIBOPENMPT_CXX_API_MEMBER std::int32_t get_current_channel_scope( std::int32_t channel, float * scope, std::int32_t count ) const;
+	/*! SiliconPlayer: current modular ring write position for the channel's scope buffer. */
+	LIBOPENMPT_CXX_API_MEMBER std::int32_t get_channel_scope_write_pos( std::int32_t channel ) const;
+	/*! SiliconPlayer: copy the wrapped scope span [fromPos, toPos) ascending into scope (planar per channel). */
+	LIBOPENMPT_CXX_API_MEMBER std::int32_t get_channel_scope_append( std::int32_t channel, float * scope, std::int32_t fromPos, std::int32_t toPos ) const;
 	//! Get compact live tracker state for a channel.
 	/*!
 	  \param channel The channel whose state should be retrieved.

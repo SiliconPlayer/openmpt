@@ -364,6 +364,14 @@ float module::get_current_channel_vu_rear_right( std::int32_t channel ) const {
 std::int32_t module::get_current_channel_scope( std::int32_t channel, float * scope, std::int32_t count ) const {
 	return impl->get_current_channel_scope( channel, scope, count );
 }
+
+std::int32_t module::get_channel_scope_write_pos( std::int32_t channel ) const {
+	return impl->get_channel_scope_write_pos( channel );
+}
+
+std::int32_t module::get_channel_scope_append( std::int32_t channel, float * scope, std::int32_t fromPos, std::int32_t toPos ) const {
+	return impl->get_channel_scope_append( channel, scope, fromPos, toPos );
+}
 std::int32_t module::get_current_channel_text_state( std::int32_t channel, std::int32_t * state, std::int32_t count ) const {
 	return impl->get_current_channel_text_state( channel, state, count );
 }

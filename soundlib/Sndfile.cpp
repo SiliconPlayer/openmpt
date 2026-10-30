@@ -930,6 +930,38 @@ int32 CSoundFile::GetChannelScopeSamples(CHANNELINDEX channel, float *output, in
 	return sampleCount;
 }
 
+int32 CSoundFile::GetChannelScopeWritePos(CHANNELINDEX channel) const
+{
+	if(channel < 0 || channel >= MAX_CHANNELS)
+	{
+		return 0;
+	}
+	return m_channelScopeBuffers[channel].writePos;
+}
+
+int32 CSoundFile::GetChannelScopeAppend(CHANNELINDEX channel, float *output, int32 fromPos, int32 toPos) const
+{
+	if(output == nullptr || channel < 0 || channel >= MAX_CHANNELS)
+	{
+		return 0;
+	}
+	const ChannelScopeBuffer &buffer = m_channelScopeBuffers[channel];
+	const uint32 bufferSize = static_cast<uint32>(kChannelScopeBufferSize);
+	// Two-sided modulo: spans that wrap the ring evaluate negative under
+	// C's % and would collapse to an empty (silence-padded) append.
+	const int32 span = ((toPos - fromPos) % static_cast<int32>(bufferSize) +
+		static_cast<int32>(bufferSize)) % static_cast<int32>(bufferSize);
+	const uint32 copyCount = static_cast<uint32>(std::max(0, span));
+	const uint32 start = static_cast<uint32>(fromPos) % bufferSize;
+	const uint32 first = std::min(copyCount, bufferSize - start);
+	std::memcpy(output, buffer.data.data() + start, first * sizeof(float));
+	if(copyCount > first)
+	{
+		std::memcpy(output + first, buffer.data.data(), (copyCount - first) * sizeof(float));
+	}
+	return static_cast<int32>(copyCount);
+}
+
 void CSoundFile::ResetChannelScopeBuffers()
 {
 	for(auto &buffer : m_channelScopeBuffers)

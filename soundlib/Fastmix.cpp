@@ -467,6 +467,7 @@ bool CSoundFile::MixChannel(int count, ModChannel &chn, CHANNELINDEX channel, bo
 				chn.position += chn.increment * nSmpCount;
 				chn.nROfs = chn.nLOfs = 0;
 				pbuffer += nSmpCount * 2;
+				PushChannelScopeSilence(channel, nSmpCount);
 				addToMix = false;
 			}
 #ifdef MODPLUG_TRACKER
@@ -584,7 +585,12 @@ bool CSoundFile::MixChannel(int count, ModChannel &chn, CHANNELINDEX channel, bo
 
 		// Restore sample pointer in case it got changed through loop wrap-around
 		chn.pCurrentSample = mixLoopState.samplePointer;
-	
+		if(nsamples > 0)
+		{
+			// Early stop broke out of the chunk; keep the ring in lockstep
+			// with the frames the chunk actually covers.
+			PushChannelScopeSilence(channel, nsamples);
+		}
 		if(addToMix && mixPlugin > 0 && mixPlugin <= MAX_MIXPLUGINS && m_MixPlugins[mixPlugin - 1].pMixPlugin)
 		{
 			m_MixPlugins[mixPlugin - 1].pMixPlugin->ResetSilence();
